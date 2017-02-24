@@ -1,0 +1,25 @@
+Manifest-Version: 1.0
+Class-Path: metrics-core-2.2.0.jar dsiutils-2.3.3.jar jline-0.9.94.jar
+  soap-2.3.1.jar snappy-java-1.1.2.4.jar bcmail-jdk15-1.45.jar xalan-2
+ .7.1.jar logback-core-1.1.7.jar avalon-framework-4.1.4.jar slf4j-log4
+ j12-1.7.21.jar scala-parser-combinators_2.11-1.0.4.jar geronimo-jms_1
+ .1_spec-1.1.1.jar commons-codec-1.6.jar excalibur-datasource-1.1.1.ja
+ r excalibur-instrument-1.0.jar commons-math3-3.6.1.jar commons-net-3.
+ 0.1.jar ApacheJMeter_core-2.7.jar hamcrest-core-1.3.jar commons-confi
+ guration-1.10.jar logback-classic-1.1.7.jar kafka-clients-0.10.0.0.ja
+ r logkit-2.0.jar excalibur-logger-1.1.jar xmlpull-1.1.3.1.jar jorphan
+ -2.7.jar netty-3.7.0.Final.jar oro-2.0.8.jar htmllexer-2.1.jar common
+ s-collections-3.2.1.jar commons-io-2.2.jar mail-1.4.4.jar xmlgraphics
+ -commons-1.3.1.jar commons-logging-1.1.1.jar bsf-api-3.1.jar slf4j-ap
+ i-1.7.21.jar excalibur-pool-1.2.jar fastutil-7.0.12.jar zkclient-0.8.
+ jar commons-httpclient-3.1.jar serializer-2.7.1.jar kafka_2.11-0.10.0
+ .0.jar httpclient-4.1.3.jar commons-jexl-2.1.1.jar xercesImpl-2.9.1.j
+ ar guava-14.0.jar jdom-1.1.2.jar zookeeper-3.4.6.jar httpcore-4.1.4.j
+ ar jsr305-1.3.9.jar bsf-2.4.0.jar gson-2.2.4.jar httpmime-4.1.3.jar j
+ opt-simple-4.9.jar bcprov-jdk15-1.45.jar xstream-1.4.2.jar xpp3_min-1
+ .1.4c.jar jcharts-0.7.5.jar htmlparser-2.1.jar jtidy-r938.jar log4j-1
+ .2.15.jar commons-lang-2.6.jar activation-1.1.1.jar scala-library-2.1
+ 1.8.jar commons-jexl-1.1.jar jsap-2.1.jar junit-4.10.jar bsh-2.0b5.ja
+ r rhino-1.7R3.jar xml-apis-1.3.04.jar lz4-1.3.0.jar
+Main-Class: com.generator.DataGenerator
+
