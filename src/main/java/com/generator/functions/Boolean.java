@@ -1,16 +1,22 @@
 package com.generator.functions;
 
-import java.util.Random;
+import java.util.SplittableRandom;
 
 /**
  * Created by GS-1029 on 01-02-2017.
+ * Data generator of type Boolean
  */
-public class Boolean implements Message{
-    private static Random random = new Random();
-    public Boolean() {
+public class Boolean implements Message {
+
+    private static SplittableRandom Srandom;
+
+    public Boolean(String data, long seed) {
+        Srandom = new SplittableRandom(seed);
     }
 
-    public String nextMessage(String data) {
-        return String.valueOf(random.nextBoolean());
+
+    @Override
+    public String nextMessage() {
+        return String.valueOf(Srandom.nextBoolean());
     }
 }

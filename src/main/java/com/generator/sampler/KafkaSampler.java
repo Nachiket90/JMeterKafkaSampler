@@ -11,8 +11,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by GS-1029 on 07/02/17.
@@ -30,7 +29,7 @@ public class KafkaSampler extends AbstractJavaSamplerClient {
     public Arguments getDefaultParameters() {
 
         Arguments defaultParameters = new Arguments();
-
+        //Set default values for properties
         defaultParameters.addArgument(ProducerPropsKeys.KAFKA_PRODUCER_CONFIG, "");
         defaultParameters.addArgument(ProducerPropsKeys.KAFKA_MESSAGE_SCHEMA, "");
         return defaultParameters;
@@ -44,27 +43,60 @@ public class KafkaSampler extends AbstractJavaSamplerClient {
         Properties props = new Properties();
 
         try {
+            //Validate proerties and load them into an consumable object
+            if (ProducerPropsKeys.KAFKA_PRODUCER_CONFIG!="" || ProducerPropsKeys.KAFKA_MESSAGE_SCHEMA!="") {
+                throw new MissingDataException("Please provide path of kafka producer properties file and message schema file path");
+            }
             producerInput = new FileInputStream(context.getParameter(ProducerPropsKeys.KAFKA_PRODUCER_CONFIG));
             dataGen = new DataGenerator(context.getParameter(ProducerPropsKeys.KAFKA_MESSAGE_SCHEMA));
             Properties producerProps = new Properties();
             producerProps.load(producerInput);
-
             Set<Object> keys = producerProps.keySet();
 
-            for (Object key: keys) {
-                props.put(key,producerProps.getProperty((String) key));
+            if (keys.contains("kerberos.enabled") && producerProps.getProperty("kerberos.enabled") == "true") {
+                producerProps = validateAuthProperties(producerProps);
             }
-
+            props.putAll(producerProps);
             topic = producerProps.getProperty("topic");
-
-            //TODO add message json parsing and properties validation and error handling
             Thread.currentThread().setContextClassLoader(null);
             producer = new KafkaProducer<String, String>(props);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (MissingDataException e) {
+            e.printStackTrace();
         }
+    }
+
+    public Properties validateAuthProperties(Properties producerProps) throws MissingDataException {
+        List<String> props = Arrays.asList("java.sec.auth.login.config","java.sec.krb5.config",
+                "sasl.kerberos.service.name","security.protocol");
+
+        if(producerProps.keySet().containsAll(props)) {
+            if (producerProps.getProperty("java.sec.auth.login.config") == "" ||
+                    producerProps.getProperty("java.sec.krb5.config") == "" ||
+                    producerProps.getProperty("sasl.kerberos.service.name") == "" ||
+                    producerProps.getProperty("security.protocol") == "") {
+                throw new MissingDataException("Please provide valid java_sec_auth_login_config file path," +
+                        "kerberos authentication file(krb5.conf) path, " +
+                        "kerberos service name," +
+                        "security protocol = SASL_PLAINTEXT");
+            }
+            else {
+                System.setProperty("java.sec.auth.login.config",producerProps.getProperty("java.sec.auth.login.config"));
+                System.setProperty("java.sec.krb5.config",producerProps.getProperty("java.sec.krb5.config"));
+                producerProps.remove("java.sec.auth.login.config");
+                producerProps.remove("java.sec.krb5.config");
+            }
+        }
+        else {
+            throw new MissingDataException("Please provide java_sec_auth_login_config file path," +
+                    "kerberos authentication file(krb5.conf) path, " +
+                    "kerberos service name," +
+                    "security protocol = SASL_PLAINTEXT");
+        }
+        return producerProps;
     }
 
     @Override
@@ -73,8 +105,8 @@ public class KafkaSampler extends AbstractJavaSamplerClient {
         String message = context.getParameter(ProducerPropsKeys.KAFKA_MESSAGE_SCHEMA);
         sampleResultStart(result, message);
 
+        //Generate a message and send it to kafka broker
         try {
-
             ProducerRecord<String, String> keyedMsg =  new ProducerRecord<String, String>(topic, dataGen.nextMessage());
             producer.send(keyedMsg);
             sampleResultSuccess(result, null);
@@ -92,7 +124,6 @@ public class KafkaSampler extends AbstractJavaSamplerClient {
         producer.close();
 
     }
-
 
     private SampleResult newSampleResult() {
         SampleResult result = new SampleResult();
@@ -135,6 +166,10 @@ public class KafkaSampler extends AbstractJavaSamplerClient {
         exception.printStackTrace(new PrintWriter(stringWriter));
         return stringWriter.toString();
     }
+}
 
-
+class MissingDataException extends Exception {
+    public MissingDataException(String msg){
+        super(msg);
+    }
 }

@@ -1,30 +1,29 @@
 package com.generator.functions;
 
-import java.util.Random;
+import java.util.SplittableRandom;
 
 /**
  * Created by GS-1029 on 30-01-2017.
+ * Data generation of char type of variable length
  */
 public class Alpha implements Message{;
     private int length;
-    private static final Random randomStr = new Random();
+    private static SplittableRandom Srandom;
     private static final char[] subset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
 
-    public Alpha(String data) {
+    public Alpha(String data, long seed) {
         length = Integer.parseInt(data);
-    }
-
-    public Alpha() {
+        Srandom = new SplittableRandom(seed);
     }
 
     @Override
-    public String nextMessage(String data) {
+    public String nextMessage() {
         char[] chars = new char[length];
         final int subsetLength = subset.length;
         for (int i = 0; i < length; i++) {
-            int index = randomStr.nextInt(subsetLength);
+            int index = Srandom.nextInt(subsetLength);
             chars[i] = subset[index];
         }
-        return new String(chars);
+        return "\""+new String(chars)+"\"";
     }
 }

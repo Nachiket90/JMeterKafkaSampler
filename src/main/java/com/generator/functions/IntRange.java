@@ -1,31 +1,24 @@
 package com.generator.functions;
 
-import java.util.Random;
+import java.util.SplittableRandom;
 
 /**
  * Created by GS-1029 on 30-01-2017.
+ * Data generator for type Integer within a range
  */
 public class IntRange implements Message{
-    private static final Random randomInt = new Random();
+    private static SplittableRandom Srandom;
     private int min,max;
 
-
-    public IntRange() {
-    }
-    public IntRange(String data) {
+    public IntRange(String data, long seed) {
         String[] splitData = data.split(",");
         min = Integer.parseInt(splitData[0]);
         max = Integer.parseInt(splitData[1]);
-    }
-
-    public static int nextEvent(int min, int max) {
-        return randomInt.nextInt((max-min)+1) + min;
+        Srandom = new SplittableRandom(seed);
     }
 
     @Override
-    public String nextMessage(String data) {
-        //String[] splitData = data.split(",");
-        //return String.valueOf(nextEvent(Integer.parseInt(splitData[0]), Integer.parseInt(splitData[1])));
-        return String.valueOf(nextEvent(min, max));
+    public String nextMessage() {
+        return String.valueOf(Srandom.nextInt(max-min)+min);
     }
 }

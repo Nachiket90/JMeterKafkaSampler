@@ -1,18 +1,20 @@
 package com.generator.functions;
 
-import java.util.Random;
+import java.util.SplittableRandom;
 
 /**
  * Created by GS-1029 on 08-02-2017.
+ * Data generator for IPV4 format IP record
  */
 public class Ipv4 implements Message{
-    private static final Random randomInt = new Random();
+    private static SplittableRandom Srandom;
 
-    public Ipv4() {
+    public Ipv4(String data, long seed) {
+        Srandom = new SplittableRandom(seed);
     }
 
     @Override
-    public String nextMessage(String data) {
-        return randomInt.nextInt(255)+"."+randomInt.nextInt(255)+"."+randomInt.nextInt(255)+"."+randomInt.nextInt(255);
+    public String nextMessage() {
+        return Srandom.nextInt(255)+"."+Srandom.nextInt(255)+"."+Srandom.nextInt(255)+"."+Srandom.nextInt(255);
     }
 }

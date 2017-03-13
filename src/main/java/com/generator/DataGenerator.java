@@ -1,36 +1,33 @@
 package com.generator;
 
-import com.generator.functions.*;
-import com.generator.functions.Boolean;
-import net.minidev.json.JSONObject;
-import net.minidev.json.parser.JSONParser;
-import net.minidev.json.parser.ParseException;
+import com.generator.functions.FixData;
+import com.generator.functions.Message;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by GS-1029 on 07-02-2017.
  */
 
-//TODO :  distribution in random, serialization support
-
 public class DataGenerator {
     private JSONObject messageProperties;
     StringBuilder stringBuilder = new StringBuilder();
     private Map<String, Message> messageAttributes= new HashMap<String, Message>();
-    JSONParser parser = new JSONParser(JSONParser.MODE_JSON_SIMPLE);
+    JSONParser parser = new JSONParser();
 
     public DataGenerator() {
         Object props = null;
         try {
-            props = parser.parse(new FileReader("C:\\genericMessages.json"));
+            props = parser.parse(new FileReader("genericMessages.json"));
             messageProperties = (JSONObject) props;
             parseJson();
         } catch (IOException e) {
@@ -57,75 +54,60 @@ public class DataGenerator {
         }
     }
 
+    private String getClassName(String className) {
+        if(className.contains("_")) {
+            int index = className.indexOf("_");
+            String fhalf = className.substring(0,index);
+            String shalf = className.substring(index+1,className.length());
+            return fhalf.substring(0,1).toUpperCase() + fhalf.substring(1).toLowerCase()+shalf.substring(0,1).toUpperCase()+shalf.substring(1).toLowerCase();
+        }
+        else {
+            return className.substring(0,1).toUpperCase() + className.substring(1).toLowerCase();
+        }
+    }
+
     private void parseJson() throws UnsupportedAttributeTypeException {
         Object messagePropertyValue;
         long seed = 0;
+        String className="";
 
-        if (messageProperties.containsKey("SEED")) {
-            seed = Long.parseLong(messageProperties.get("SEED").toString());
-        }
-
-        for (Object messageProperty : messageProperties.keySet()) {
-            messagePropertyValue = messageProperties.get(messageProperty.toString());
-            if (messagePropertyValue.toString().contains("TIMESTAMP")) {
-                messageAttributes.put(messageProperty.toString(),new TimeStamp());
-            }
-            else if (messagePropertyValue.toString().contains("STRING")) {
-                String paramList = messagePropertyValue.toString();
-                int firstIndex = paramList.indexOf("(") + 1;
-                int lastIndex = paramList.indexOf(")");
-                messageAttributes.put(messageProperty.toString(),new Alpha(paramList.substring(firstIndex,lastIndex),seed));
-            }
-            else if (messagePropertyValue.toString().contains("ALPHANUMERIC")) {
-                String paramList = messagePropertyValue.toString();
-                int firstIndex = paramList.indexOf("(") + 1;
-                int lastIndex = paramList.indexOf(")");
-                messageAttributes.put(messageProperty.toString(),new AlphaNumeric(paramList.substring(firstIndex,lastIndex),seed));
-            }
-            else if (messagePropertyValue.toString().contains("NUMERIC")) {
-                String paramList = messagePropertyValue.toString();
-                int firstIndex = paramList.indexOf("(") + 1;
-                int lastIndex = paramList.indexOf(")");
-                messageAttributes.put(messageProperty.toString(),new Numeric(paramList.substring(firstIndex,lastIndex),seed));
-            }
-            else if (messagePropertyValue.toString().contains("BOOLEAN")) {
-                messageAttributes.put(messageProperty.toString(), new Boolean());
-            }
-            else if (messagePropertyValue.toString().contains("RANDOM")) {
-                String paramList = messagePropertyValue.toString();
-                int firstIndex = paramList.indexOf("(") + 1;
-                int lastIndex = paramList.indexOf(")");
-                messageAttributes.put(messageProperty.toString(),new RandomData(paramList.substring(firstIndex,lastIndex),seed));
-            }
-            else if (messagePropertyValue.toString().contains("LONG_RANGE")) {
-                String paramList = messagePropertyValue.toString();
-                int firstIndex = paramList.indexOf("(") + 1;
-                int lastIndex = paramList.indexOf(")");
-                messageAttributes.put(messageProperty.toString(),new LongRange(paramList.substring(firstIndex,lastIndex),seed));
-            }
-            else if (messagePropertyValue.toString().contains("INT_RANGE")) {
-                String paramList = messagePropertyValue.toString();
-                int firstIndex = paramList.indexOf("(") + 1;
-                int lastIndex = paramList.indexOf(")");
-                messageAttributes.put(messageProperty.toString(),new IntRange(paramList.substring(firstIndex,lastIndex),seed));
-            }
-            else if (messagePropertyValue.toString().contains("DOUBLE_RANGE")) {
-                String paramList = messagePropertyValue.toString();
-                int firstIndex = paramList.indexOf("(") + 1;
-                int lastIndex = paramList.indexOf(")");
-                messageAttributes.put(messageProperty.toString(),new DoubleRange(paramList.substring(firstIndex,lastIndex),seed));
-            }
-            else if (messagePropertyValue.toString().contains("IP")) {
-                messageAttributes.put(messageProperty.toString(),new Ipv4());
-            }
-            else if (messagePropertyValue instanceof String) {
-                messageAttributes.put(messageProperty.toString(),new FixData(messagePropertyValue.toString()));
-            }
-            else if (messagePropertyValue instanceof Long) {
-                messageAttributes.put(messageProperty.toString(),new FixData(messagePropertyValue.toString()));
-            }
-            else {
-                throw new UnsupportedAttributeTypeException("Unsupported message attribute type");
+        for (Object reflect_messsageProperty : messageProperties.keySet()) {
+            try {
+                if (reflect_messsageProperty.toString() == "SEED") {
+                    seed = Long.parseLong(messageProperties.get("SEED").toString());
+                }
+                else {
+                    messagePropertyValue = messageProperties.get(reflect_messsageProperty.toString());
+                    String paramList = messagePropertyValue.toString();
+                    int firstIndex = paramList.indexOf("(") + 1;
+                    int lastIndex = paramList.indexOf(")");
+                    if (messagePropertyValue.toString().contains("(")) {
+                        className = getClassName(messagePropertyValue.toString().substring(0, firstIndex-1));
+                        Constructor<?> c = Class.forName("com.generator.functions." + className).getDeclaredConstructor(String.class, long.class);
+                        messageAttributes.put(reflect_messsageProperty.toString(), (Message) c.newInstance(new Object[]{paramList.substring(firstIndex, lastIndex), seed}));
+                    } else {
+                        className = new String("FixData");
+                        if (messagePropertyValue instanceof String) {
+                            messageAttributes.put(reflect_messsageProperty.toString(),new FixData(messagePropertyValue.toString()));
+                        }
+                        else if (messagePropertyValue instanceof Long) {
+                            messageAttributes.put(reflect_messsageProperty.toString(),new FixData(messagePropertyValue.toString()));
+                        }
+                        else if (messagePropertyValue instanceof Float) {
+                            messageAttributes.put(reflect_messsageProperty.toString(),new FixData(messagePropertyValue.toString()));
+                        }
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -139,58 +121,65 @@ public class DataGenerator {
             message.append("{");
             int seq = 0;
             for (String messageAttributeKey : messageAttributes.keySet()) {
-                //message.append("\"" + messageAttributeKey.toString() + "\":\"" + messageAttributeHashMap.get(messageAttributeKey).nextMessage(funParamList.get(seq)) + "\"," );
-                message.append("\"" + messageAttributeKey.toString() + "\":\"" + messageAttributes.get(messageAttributeKey).nextMessage() + "\",");
+                message.append("\"" + messageAttributeKey.toString() + "\":" + messageAttributes.get(messageAttributeKey).nextMessage() + ",");
                 seq++;
             }
+            message.setCharAt(message.lastIndexOf(","),' ');
             message.append("}");
-            //System.out.println(message.capacity());
         }
         return message.toString();
     }
 
     public static void main(String[] args) {
-        DataGenerator genMessage = new DataGenerator("C:\\genericMessages.json");
-        try {
-            BufferedWriter out = new BufferedWriter(new FileWriter("C:\\data.txt"), 32768);
-            java.util.Date date= new java.util.Date();
-            //HashMap<String, Message> messageAttributes = genMessage.parseJson();
-            System.out.println(new Timestamp(date.getTime()));
-            System.out.println(new Date(System.currentTimeMillis()));
-
-            //it.unimi.dsi.util.XorShift128PlusRandom XrandomInt = new XorShift128PlusRandom();
-            //Random randomInt = new Random();
-
-            for (int i=1; i<1000000; i++) {
-                //genMessage.nextMessage(messageAttributes);
-                genMessage.nextMessage();
-               //System.out.println(genMessage.nextMessage(messageAttributes));
-
-                //XrandomInt.nextInt();
-                //randomInt.nextInt();
-
-                //XrandomInt.nextLong(1000000000);
-                //randomInt.nextLong();
-                //ThreadLocalRandom.current().nextLong(1000000,10000000);
-
-                //XrandomInt.nextDouble();
-                //XrandomInt.doubles(1.2, 22.0);
-                //randomInt.nextDouble();
-                //ThreadLocalRandom.current().nextDouble(1.2, 22.00);
-
+        if (args.length < 2) {
+            try {
+                throw new InsufficientAttributesException("Help : Datagenerator.jar <message schema file in json format> " +
+                        "<Kafka producer properties file> <number of messages to send>");
+            } catch (InsufficientAttributesException e) {
+                e.printStackTrace();
             }
-            //System.out.println(new Timestamp(date.getTime()));
-            System.out.println(new Date(System.currentTimeMillis()));
+        } else {
+            DataGenerator genMessage = new DataGenerator(args[0]);
+            InputStream producerInput, messageInput = null;
+            String message;
+            KafkaProducer<String, String> producer;
+            Properties props = new Properties();
+            Properties producerProps = new Properties();
+            try {
+                producerInput = new FileInputStream(args[1]);
+                producerProps.load(producerInput);
+                BufferedWriter out = new BufferedWriter(new FileWriter("C:\\data.txt"), 32768);
+                java.util.Date date = new java.util.Date();
+                System.out.println(new Timestamp(date.getTime()));
+                System.out.println(new Date(System.currentTimeMillis()));
+                Set<Object> keys = producerProps.keySet();
+                for (Object key : keys) {
+                    props.put(key, producerProps.getProperty((String) key));
+                }
+                String topic = producerProps.getProperty("topic");
+                producer = new KafkaProducer<String, String>(props);
 
-        } catch (IOException e) {
-            e.printStackTrace();
+                for (int i = 1; i < Long.parseLong(args[2]); i++) {
+                    ProducerRecord<String, String> keyedMsg = new ProducerRecord<String, String>(topic, genMessage.nextMessage());
+                    producer.send(keyedMsg);
+                }
+                System.out.println(new Date(System.currentTimeMillis()));
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
 
-
 class UnsupportedAttributeTypeException extends Exception {
     public UnsupportedAttributeTypeException(String msg){
+        super(msg);
+    }
+}
+
+class InsufficientAttributesException extends Exception {
+    public InsufficientAttributesException(String msg){
         super(msg);
     }
 }

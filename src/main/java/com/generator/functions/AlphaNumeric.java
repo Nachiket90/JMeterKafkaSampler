@@ -1,31 +1,31 @@
 package com.generator.functions;
 
-import java.util.Random;
+import java.util.SplittableRandom;
 
 /**
  * Created by GS-1029 on 30-01-2017.
+ * Data generator for type alphanumeric with variable length
  */
 
 public class AlphaNumeric implements Message{
     private int length=0;
     private String data;
-    private static final Random randomStr = new Random();
+    private static SplittableRandom Srandom;
     private static final char[] subset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
 
-    public AlphaNumeric(String data) {
+    public AlphaNumeric(String data, long seed) {
         length = Integer.parseInt(data);
+        Srandom = new SplittableRandom(seed);
     }
 
-    public AlphaNumeric() {
-    }
-
-    public String nextMessage(String data) {
+    @Override
+    public String nextMessage() {
         char[] chars = new char[length];
         final int subsetLength = subset.length;
         for (int i = 0; i < length; i++) {
-            int index = randomStr.nextInt(subsetLength);
+            int index = Srandom.nextInt(subsetLength);
             chars[i] = subset[index];
         }
-        return new String(chars);
+        return "\""+new String(chars)+"\"";
     }
 }

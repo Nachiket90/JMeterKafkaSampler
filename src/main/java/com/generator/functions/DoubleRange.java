@@ -1,30 +1,25 @@
 package com.generator.functions;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.SplittableRandom;
 
 /**
  * Created by GS-1029 on 30-01-2017.
+ * Data generator of type double within a range
  */
 public class DoubleRange implements Message{
     private double min,max;
+    private static SplittableRandom Srandom;
 
-    public DoubleRange(String data) {
+    public DoubleRange(String data, long seed) {
         String[] splitData = data.split(",");
         min = Double.parseDouble(splitData[0]);
         max = Double.parseDouble(splitData[1]);
-    }
+        Srandom = new SplittableRandom(seed);
 
-    public DoubleRange() {
-    }
-
-    public static double nextEvent(double min, double max) {
-        return ThreadLocalRandom.current().nextDouble(min,max);
     }
 
     @Override
-    public String nextMessage(String data) {
-        //String[] splitData = data.split(",");
-        //return String.valueOf(ThreadLocalRandom.current().nextDouble(Double.parseDouble(splitData[0]), Double.parseDouble(splitData[1])));
-        return String.valueOf(ThreadLocalRandom.current().nextDouble(min,max));
+    public String nextMessage() {
+        return String.valueOf(Srandom.nextDouble()+min);
     }
 }

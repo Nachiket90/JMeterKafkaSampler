@@ -1,31 +1,24 @@
 package com.generator.functions;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.SplittableRandom;
 
 /**
  * Created by GS-1029 on 30-01-2017.
+ * Data generator of type Long within a range
  */
 public class LongRange implements Message{
     private Long min,max;
+    private static SplittableRandom Srandom;
 
-    public LongRange() {
-    }
-
-    public LongRange(String data) {
+    public LongRange(String data, long seed) {
         String[] splitData = data.split(",");
         min = Long.parseLong(splitData[0]);
         max = Long.parseLong(splitData[1]);
-    }
-
-    public static long nextEvent(long min, long max) {
-        //return  ThreadLocalRandom.current() .nextLong(min,max);
-        return ThreadLocalRandom.current().nextLong(min,max);
+        Srandom = new SplittableRandom(seed);
     }
 
     @Override
-    public String nextMessage(String data) {
-        //String[] splitData = data.split(",");
-        //return String.valueOf(nextEvent(Long.parseLong(splitData[0]), Long.parseLong(splitData[1])));
-        return String.valueOf(ThreadLocalRandom.current().nextLong(min,max));
+    public String nextMessage() {
+        return String.valueOf(Srandom.nextLong(max-min))+min;
     }
 }
