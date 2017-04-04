@@ -1,1 +1,1 @@
-# Pepper_Box
+# JMeterKafkaSampler
